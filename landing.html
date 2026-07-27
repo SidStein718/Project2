@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HIV Resistance Tracker | Precision Clinical Bioinformatics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            darkMode: ['class', '[data-theme="dark"]'],
+            theme: {
+                extend: {
+                    colors: {
+                        accent: 'var(--accent-color)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        :root {
+            --bg-base: #0b0e14;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --card-bg: rgba(15, 23, 42, 0.6);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --accent-color: #06b6d4;
+            --accent-glow: rgba(6, 182, 212, 0.25);
+            --glass-blur: blur(16px) saturate(180%);
+        }
+
+        [data-theme="light"] {
+            --bg-base: #f8fafc;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --card-bg: rgba(255, 255, 255, 0.7);
+            --card-border: rgba(0, 0, 0, 0.08);
+            --accent-glow: rgba(6, 182, 212, 0.15);
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .bg-grid {
+            background-size: 40px 40px;
+            background-image: 
+                linear-gradient(to right, rgba(148, 163, 184, 0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(148, 163, 184, 0.05) 1px, transparent 1px);
+        }
+
+        .glass-panel {
+            background: var(--card-bg);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--card-border);
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.05); }
+        }
+        .animate-glow { animation: pulse-glow 6s ease-in-out infinite; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+        }
+        .animate-float { animation: float 5s ease-in-out infinite; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between relative overflow-x-hidden">
+
+    <div id="ambientGlow" class="absolute top-[-100px] left-1/2 -translate-x-1/2 w-[650px] h-[380px] bg-gradient-to-tr from-cyan-500/20 via-blue-500/20 to-emerald-500/10 blur-[130px] rounded-full pointer-events-none animate-glow"></div>
+
+    <nav class="glass-panel sticky top-0 z-50 border-b">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <a href="/" class="flex items-center space-x-3 group">
+                <div class="w-9 h-9 rounded-xl flex items-center justify-center shadow-lg transition-transform group-hover:scale-105" style="background: var(--accent-color); color: white;">
+                    <i data-lucide="dna" class="w-5 h-5"></i>
+                </div>
+                <span class="font-bold text-lg tracking-tight">HIV Resistance Tracker</span>
+            </a>
+
+            <div class="hidden md:flex items-center space-x-8 text-sm font-medium opacity-80">
+                <a href="#features" class="hover:text-cyan-400 transition-colors">Platform Capabilities</a>
+                <a href="#workflow" class="hover:text-cyan-400 transition-colors">Clinical Workflow</a>
+                <a href="#ai-assistant" class="hover:text-cyan-400 transition-colors">AI Diagnostics</a>
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-2 px-3 py-1.5 rounded-full border border-slate-700/50 glass-panel">
+                    <input type="color" id="accentColorPicker" class="w-5 h-5 rounded-full border-none cursor-pointer bg-transparent" value="#06b6d4" title="Choose Accent Color">
+                    <button id="themeToggleBtn" class="p-1 rounded-full opacity-70 hover:opacity-100 transition-opacity" title="Toggle Light/Dark Theme">
+                        <i data-lucide="moon" id="themeIcon" class="w-4 h-4"></i>
+                    </button>
+                </div>
+
+                <a href="/app" class="relative inline-flex items-center justify-center p-0.5 overflow-hidden text-sm font-medium rounded-xl group transition-all" style="background: var(--accent-color);">
+                    <span class="relative px-5 py-2 transition-all ease-in duration-75 rounded-[10px] flex items-center gap-2 font-semibold text-white">
+                        Launch Dashboard
+                        <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
+                    </span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="relative bg-grid pt-16 pb-20 px-6">
+        <div class="max-w-5xl mx-auto text-center">
+            
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 text-cyan-400 text-xs font-medium mb-8">
+                <span class="flex h-2 w-2 rounded-full bg-cyan-400 animate-ping"></span>
+                <span>Bioinformatics Suite v2.0 • AI-Assisted Drug Resistance Analysis</span>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 opacity-70"></i>
+            </div>
+
+            <h1 class="text-4xl sm:text-6xl font-extrabold tracking-tight mb-6 leading-tight">
+                Precision Genomic Profiling & <br class="hidden sm:inline" />
+                <span style="color: var(--accent-color);">HIV Resistance Intelligence</span>
+            </h1>
+
+            <p class="text-lg sm:text-xl text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed">
+                Parse viral genomic variants, evaluate multi-drug class susceptibility, and generate real-time clinical guidance supported by LLM reasoning.
+            </p>
+
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
+                <a href="/app" class="w-full sm:w-auto px-8 py-3.5 rounded-xl text-white font-semibold shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2" style="background: var(--accent-color);">
+                    <i data-lucide="activity" class="w-5 h-5"></i>
+                    Open Live Tracker
+                </a>
+                <a href="#features" class="w-full sm:w-auto px-8 py-3.5 rounded-xl glass-panel font-semibold hover:border-slate-500 transition-all flex items-center justify-center gap-2">
+                    <i data-lucide="microscope" class="w-5 h-5"></i>
+                    Explore Features
+                </a>
+            </div>
+
+            <div class="relative max-w-3xl mx-auto rounded-2xl glass-panel p-5 sm:p-6 shadow-2xl text-left animate-float">
+                <div class="flex items-center justify-between border-b border-slate-700/50 pb-3 mb-4">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-3 h-3 rounded-full bg-red-500/80"></div>
+                        <div class="w-3 h-3 rounded-full bg-yellow-500/80"></div>
+                        <div class="w-3 h-3 rounded-full bg-green-500/80"></div>
+                        <span class="text-xs font-mono opacity-60 ml-2">patient_analysis_sample.json</span>
+                    </div>
+                    <span class="text-xs px-2.5 py-1 rounded bg-amber-500/10 text-amber-400 font-mono border border-amber-500/20">Critical Signal</span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 text-xs">
+                    <div class="p-3 rounded-lg border border-slate-700/50 glass-panel">
+                        <span class="opacity-60 block mb-1">Fitness Score</span>
+                        <span class="text-lg font-bold" style="color: var(--accent-color);">0.82</span>
+                    </div>
+                    <div class="p-3 rounded-lg border border-slate-700/50 glass-panel">
+                        <span class="opacity-60 block mb-1">Resistance Probability</span>
+                        <span class="text-lg font-bold text-amber-400">79%</span>
+                    </div>
+                    <div class="p-3 rounded-lg border border-slate-700/50 glass-panel">
+                        <span class="opacity-60 block mb-1">Identified Mutations</span>
+                        <span class="text-lg font-bold text-emerald-400">M184V, K103N</span>
+                    </div>
+                </div>
+
+                <div class="rounded-xl p-3 border border-slate-700/50 font-mono text-xs leading-relaxed glass-panel">
+                    <span class="opacity-50">// Guidance Output</span><br>
+                    <span class="text-cyan-400">"Prioritize a regimen review around K103N because it is associated with Efavirenz and a critical resistance signal."</span>
+                </div>
+            </div>
+        </div>
+
+        <section id="features" class="max-w-6xl mx-auto mt-28">
+            <div class="text-center mb-16">
+                <h2 class="text-2xl sm:text-3xl font-bold mb-3">Engineered for Clinical Bioinformatics</h2>
+                <p class="text-slate-400">Streamline viral resistance detection with integrated risk modeling and AI analysis.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="p-6 rounded-2xl glass-panel hover:border-slate-500 transition-all group">
+                    <div class="w-12 h-12 rounded-xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform" style="background: var(--accent-glow); color: var(--accent-color);">
+                        <i data-lucide="dna" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold mb-2">Genomic Variant Parsing</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed">
+                        Extract mutation profiles directly from text notes or uploaded FASTA and CSV biological sequence files.
+                    </p>
+                </div>
+
+                <div class="p-6 rounded-2xl glass-panel hover:border-slate-500 transition-all group">
+                    <div class="w-12 h-12 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+                        <i data-lucide="shield-alert" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold mb-2">Drug Class Profiling</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed">
+                        Evaluate mutation impacts across NRTI, NNRTI, PI, and INSTI classes with real-time severity classification.
+                    </p>
+                </div>
+
+                <div id="ai-assistant" class="p-6 rounded-2xl glass-panel hover:border-slate-500 transition-all group">
+                    <div class="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+                        <i data-lucide="bot" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold mb-2">AI Assistant Integration</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed">
+                        Query drug resistance patterns using Groq-powered natural language reasoning for enhanced decision support.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <section id="workflow" class="max-w-6xl mx-auto mt-28 text-center">
+            <h2 class="text-2xl sm:text-3xl font-bold mb-3">Seamless Clinical Workflow</h2>
+            <p class="text-slate-400 mb-10">From biological input to actionable clinical guidance in seconds.</p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
+                <div class="p-5 rounded-xl glass-panel border border-slate-700/50">
+                    <span class="text-xs font-mono font-bold text-cyan-400">STEP 01</span>
+                    <h4 class="font-bold mt-2 mb-1">Input Sequence Data</h4>
+                    <p class="text-xs text-slate-400">Paste sequence notes or upload FASTA/CSV files directly into the analyzer.</p>
+                </div>
+                <div class="p-5 rounded-xl glass-panel border border-slate-700/50">
+                    <span class="text-xs font-mono font-bold text-cyan-400">STEP 02</span>
+                    <h4 class="font-bold mt-2 mb-1">Compute Susceptibility</h4>
+                    <p class="text-xs text-slate-400">Automated calculation of fitness loss and resistance matrix across target drug classes.</p>
+                </div>
+                <div class="p-5 rounded-xl glass-panel border border-slate-700/50">
+                    <span class="text-xs font-mono font-bold text-cyan-400">STEP 03</span>
+                    <h4 class="font-bold mt-2 mb-1">Generate Guidance</h4>
+                    <p class="text-xs text-slate-400">Review structured reports or converse with the AI assistant for decision support.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="border-t border-slate-800/80 py-8 px-6 text-center text-xs text-slate-500">
+        <p>&copy; 2026 HIV Resistance Tracker. Designed for biological sequence analysis and clinical reference.</p>
+    </footer>
+
+    <script>
+        const htmlEl = document.documentElement;
+        const themeToggleBtn = document.getElementById("themeToggleBtn");
+        const colorPicker = document.getElementById("accentColorPicker");
+
+        function setTheme(theme) {
+            htmlEl.setAttribute("data-theme", theme);
+            localStorage.setItem("theme", theme);
+
+            const iconName = theme === "dark" ? "moon" : "sun";
+            themeToggleBtn.innerHTML = `<i data-lucide="${iconName}" id="themeIcon" class="w-4 h-4"></i>`;
+            lucide.createIcons();
+        }
+
+        function setAccentColor(color) {
+            document.documentElement.style.setProperty("--accent-color", color);
+            document.documentElement.style.setProperty("--accent-glow", `${color}40`);
+            localStorage.setItem("accentColor", color);
+        }
+
+        const savedTheme = localStorage.getItem("theme") || "dark";
+        const savedColor = localStorage.getItem("accentColor") || "#06b6d4";
+        setTheme(savedTheme);
+        colorPicker.value = savedColor;
+        setAccentColor(savedColor);
+
+        themeToggleBtn.addEventListener("click", () => {
+            const currentTheme = htmlEl.getAttribute("data-theme");
+            setTheme(currentTheme === "dark" ? "light" : "dark");
+        });
+
+        colorPicker.addEventListener("input", (e) => setAccentColor(e.target.value));
+
+        lucide.createIcons();
+    </script>
+</body>
+</html>
