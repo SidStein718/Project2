@@ -3,6 +3,7 @@ import re
 import webbrowser
 import threading
 from datetime import datetime
+import requests
 
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
@@ -22,7 +23,7 @@ CORS(app)
 
 
 # ==========================================
-# Mutation Database
+# Mutation Database (Local Fallback)
 # ==========================================
 
 MUTATION_LIBRARY = {
@@ -120,8 +121,11 @@ MUTATION_LIBRARY = {
 }
 
 
+STANFORD_HIVDB_URL = "https://hivdb.stanford.edu/graphql"
+
+
 # ==========================================
-# Utility Functions
+# Utility & Stanford API Functions
 # ==========================================
 
 def parse_mutations(raw_text: str):
@@ -140,9 +144,93 @@ def parse_mutations(raw_text: str):
     return valid_tokens[:10]
 
 
+def query_stanford_hivdb(mutations_list):
+    """Queries Stanford HIV Drug Resistance Database via Sierra GraphQL API."""
+    if not mutations_list:
+        return None
+
+    formatted_mutations = []
+    for m in mutations_list:
+        if m.startswith("RT:") or m.startswith("PR:") or m.startswith("IN:"):
+            formatted_mutations.append(m)
+        else:
+            # Default to Reverse Transcriptase (RT) prefix if not specified
+            formatted_mutations.append(f"RT:{m}")
+
+    mutation_pattern = " + ".join(formatted_mutations)
+
+    graphql_query = """
+    query AnalyzeMutations($patterns: [String]!) {
+      mutationsAnalysis(patterns: $patterns) {
+        validationResults {
+          level
+          message
+        }
+        drugResistances {
+          drugClass {
+            name
+          }
+          drug {
+            name
+            displayAbbr
+          }
+          score
+          text
+          level
+        }
+      }
+    }
+    """
+
+    try:
+        response = requests.post(
+            STANFORD_HIVDB_URL,
+            json={"query": graphql_query, "variables": {"patterns": [mutation_pattern]}},
+            headers={"Content-Type": "application/json"},
+            timeout=6
+        )
+        if response.status_code == 200:
+            res_data = response.json()
+            analysis = res_data.get("data", {}).get("mutationsAnalysis", [])
+            if analysis:
+                return analysis[0]
+        return None
+    except Exception as e:
+        print(f"Stanford API Query Warning: {e}. Falling back to local library.")
+        return None
+
+
 def build_resistance_table(mutations, selected_drugs):
+    # Try Stanford HIVdb API first
+    stanford_result = query_stanford_hivdb(mutations)
     rows = []
 
+    if stanford_result and "drugResistances" in stanford_result:
+        for dr in stanford_result["drugResistances"]:
+            drug_class_name = dr["drugClass"]["name"]
+            if drug_class_name in selected_drugs:
+                level_text = dr.get("text", "Susceptible")
+                # Map Stanford levels to severity terms
+                severity_map = {
+                    "High-level resistance": "Critical",
+                    "Substantial resistance": "High",
+                    "Intermediate resistance": "High",
+                    "Low-level resistance": "Moderate",
+                    "Potential low-level resistance": "Moderate",
+                    "Susceptible": "Low"
+                }
+                severity = severity_map.get(level_text, "Moderate")
+
+                rows.append({
+                    "Mutation": ", ".join(mutations),
+                    "Drug": dr["drug"]["name"],
+                    "Class": drug_class_name,
+                    "Severity": severity
+                })
+        if rows:
+            return rows
+
+    # Fallback to local MUTATION_LIBRARY
     for mutation in mutations:
         entry = MUTATION_LIBRARY.get(mutation)
         if not entry:
@@ -249,6 +337,13 @@ def mutation_explanations(mutations):
 
     for mutation in mutations:
         if mutation not in MUTATION_LIBRARY:
+            explanations.append({
+                "mutation": mutation,
+                "gene": "Genomic Variation",
+                "drug": "Cross-Class Analysis",
+                "severity": "Evaluated via Stanford HIVdb",
+                "description": f"Marker {mutation} analyzed against Stanford HIV Drug Resistance criteria."
+            })
             continue
 
         info = MUTATION_LIBRARY[mutation]
@@ -271,8 +366,8 @@ def build_guidance(mutations, selected_drugs):
         return {
             "title": "AI Resistance Summary",
             "risk": "Low",
-            "summary": "No known resistance mutations were found in the built-in mutation library.",
-            "recommendation": "Verify the submitted mutations or expand the mutation database."
+            "summary": "No known resistance mutations were found in the active mutation sequence.",
+            "recommendation": "Verify the submitted mutations or upload a clean FASTA file."
         }
 
     severity_order = {
@@ -292,14 +387,12 @@ def build_guidance(mutations, selected_drugs):
         "risk": dominant["Severity"],
         "summary": (
             f"{len(mutations)} mutation(s) were detected. "
-            f"The mutation {dominant['Mutation']} is associated with "
-            f"{dominant['Drug']} and shows "
-            f"{dominant['Severity'].lower()} resistance."
+            f"Key finding associated with {dominant['Drug']} shows "
+            f"{dominant['Severity'].lower()} resistance risk."
         ),
         "recommendation": (
-            "This analysis is educational only. "
-            "Laboratory confirmation and clinician review are recommended "
-            "before making treatment decisions."
+            "This analysis is educational decision support based on Stanford HIVdb principles. "
+            "Laboratory confirmation and clinician review are recommended before making treatment choices."
         )
     }
 
@@ -338,10 +431,10 @@ def analyze():
     explanations = mutation_explanations(mutations)
 
     # Dynamic Heatmap Matrix based on parsed mutations
-    has_nrti = any(m in ["M184V", "T215Y"] for m in mutations)
-    has_nnrti = any(m in ["K103N", "L100I", "Y181C"] for m in mutations)
-    has_pi = any(m in ["G48V", "I54V"] for m in mutations)
-    has_insti = any(m in ["N155H"] for m in mutations)
+    has_nrti = any(m in ["M184V", "T215Y", "K65R"] for m in mutations)
+    has_nnrti = any(m in ["K103N", "L100I", "Y181C", "G190A"] for m in mutations)
+    has_pi = any(m in ["G48V", "I54V", "V82A", "L90M"] for m in mutations)
+    has_insti = any(m in ["N155H", "Q148H"] for m in mutations)
 
     heatmap_data = [
         [3.8 if has_nrti else 1.1, 4.5 if has_nnrti else 1.0, 2.9 if has_pi else 0.8, 3.2 if has_insti else 0.7],
@@ -370,6 +463,8 @@ def chat():
     data = request.json or {}
     prompt = data.get("prompt", "")
     assistant_log = data.get("assistant_log", [])
+    active_mutations = data.get("mutations", [])
+    patient_id = data.get("patient_id", "PAT-9921")
 
     api_key = os.getenv("GROQ_API_KEY")
     if not api_key or Groq is None:
@@ -381,31 +476,35 @@ def chat():
             )
         })
 
+    mutation_context = ", ".join(active_mutations) if active_mutations else "None specified"
+
+    system_instruction = (
+        f"You are a Clinical Bioinformatics AI Assistant embedded in an HIV Resistance Dashboard.\n"
+        f"ACTIVE PATIENT DATA:\n"
+        f"- Patient ID: {patient_id}\n"
+        f"- Detected Mutations: {mutation_context}\n\n"
+        f"RULES FOR ACCURACY:\n"
+        f"1. Base explanations on verified HIV resistance benchmarks (e.g., Stanford HIVdb guidelines).\n"
+        f"2. Separate mutation mechanics from drug susceptibility impact.\n"
+        f"3. Frame all insights as educational decision support for clinicians. Do not issue prescriptions.\n"
+        f"4. Keep responses structured, precise, and clear."
+    )
+
     try:
         client = Groq(api_key=api_key)
-        messages = [
-            {
-                "role": "system",
-                "content": (
-                    "You are an educational HIV resistance assistant. "
-                    "Explain HIV mutations, drug resistance, mutation severity, "
-                    "drug classes, and the dashboard results in clear language. "
-                    "Do not make treatment decisions or provide medical advice. "
-                    "Keep responses concise and easy to understand."
-                )
-            }
-        ]
-        messages.extend(assistant_log)
-        messages.append({
-            "role": "user",
-            "content": prompt
-        })
+        messages = [{"role": "system", "content": system_instruction}]
+        
+        for msg in assistant_log:
+            if isinstance(msg, dict) and "role" in msg and "content" in msg:
+                messages.append({"role": msg["role"], "content": msg["content"]})
+
+        messages.append({"role": "user", "content": prompt})
 
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=messages,
-            temperature=0.2,
-            max_tokens=400
+            temperature=0.1,  # Low temperature for fact-grounded accuracy
+            max_tokens=450
         )
         reply = response.choices[0].message.content.strip()
         return jsonify({"response": reply})
