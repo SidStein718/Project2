@@ -513,8 +513,8 @@ def chat():
 
 
 if __name__ == "__main__":
-    PORT = 5000
+    PORT = int(os.environ.get("PORT", "5000"))
     url = f"http://127.0.0.1:{PORT}/"
     if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
         threading.Timer(1.2, lambda: webbrowser.open_new(url)).start()
-    app.run(host="0.0.0.0", port=PORT, debug=True)
+    app.run(host="0.0.0.0", port=PORT, debug=False)
