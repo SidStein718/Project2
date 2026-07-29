@@ -3,8 +3,10 @@ import re
 import webbrowser
 import threading
 from datetime import datetime
-import requests
+from pathlib import Path
 
+import requests
+from dotenv import load_dotenv
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 
@@ -17,6 +19,9 @@ except ImportError:
 # ==========================================
 # Flask App
 # ==========================================
+
+BASE_DIR = Path(__file__).resolve().parent
+load_dotenv(BASE_DIR / ".env")
 
 app = Flask(__name__)
 CORS(app)
